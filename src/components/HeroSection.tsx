@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   const [pickup, setPickup] = useState("");
   const [drop, setDrop] = useState("");
 
@@ -59,7 +61,7 @@ const HeroSection = () => {
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted border-none text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
-                <Button variant="hero" className="w-full h-12 text-base" size="lg">
+                <Button variant="hero" className="w-full h-12 text-base" size="lg" onClick={() => navigate("/track")}>
                   Find a Ride <ArrowRight size={18} />
                 </Button>
               </div>

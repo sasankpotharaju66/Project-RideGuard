@@ -12,8 +12,11 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background */}
+      {/* Background with logo */}
       <div className="absolute inset-0 bg-gradient-to-br from-secondary via-background to-secondary/80" />
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <img src={logo} alt="" className="w-[600px] h-[600px] object-contain opacity-[0.07]" />
+      </div>
 
       <div className="container mx-auto px-4 relative z-10 pt-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
-import heroBg from "@/assets/hero-bg.jpg";
+import logo from "@/assets/logo.jpeg";
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -13,10 +13,7 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0">
-        <img src={heroBg} alt="Rapido rider" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
-      </div>
+      <div className="absolute inset-0 bg-gradient-to-br from-secondary via-background to-secondary/80" />
 
       <div className="container mx-auto px-4 relative z-10 pt-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -34,7 +31,7 @@ const HeroSection = () => {
               <span className="text-gradient">Faster.</span>
             </h1>
             <p className="text-lg text-muted-foreground mb-8 max-w-lg">
-              Book bike taxis, autos & cabs at the lowest fares. Beat the traffic, save time, and ride safe with Rapido.
+              Book bike taxis, autos & cabs at the lowest fares. Beat the traffic, save time, and ride safe with RideGuard.
             </p>
 
             {/* Booking Card */}
@@ -82,8 +79,15 @@ const HeroSection = () => {
             </div>
           </motion.div>
 
-          {/* Right side is the background image */}
-          <div className="hidden lg:block" />
+          {/* Right side - Logo */}
+          <motion.div
+            className="hidden lg:flex items-center justify-center"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            <img src={logo} alt="RideGuard" className="w-80 h-80 object-contain drop-shadow-2xl" />
+          </motion.div>
         </div>
       </div>
     </section>

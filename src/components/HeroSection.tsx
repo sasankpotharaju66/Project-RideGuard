@@ -1,22 +1,48 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MapPin, Navigation, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "@/assets/logo.jpeg";
 
 const HeroSection = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [pickup, setPickup] = useState("");
   const [drop, setDrop] = useState("");
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+
+  const handleInputFocus = () => {
+    if (!isAuthenticated) {
+      setShowAuthDialog(true);
+    }
+  };
+
+  const handleBookRide = () => {
+    if (!isAuthenticated) {
+      setShowAuthDialog(true);
+      return;
+    }
+    if (!pickup || !drop) {
+      return;
+    }
+    navigate("/track");
+  };
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background with logo */}
       <div className="absolute inset-0 bg-gradient-to-br from-secondary via-background to-secondary/80" />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <img src={logo} alt="" className="w-[600px] h-[600px] object-contain opacity-[0.07]" />
-      </div>
+      {/* center watermark removed — using the prominent logo on the right instead */}
 
       <div className="container mx-auto px-4 relative z-10 pt-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -48,6 +74,8 @@ const HeroSection = () => {
                     placeholder="Pickup location"
                     value={pickup}
                     onChange={(e) => setPickup(e.target.value)}
+                    onFocus={handleInputFocus}
+                    readOnly={!isAuthenticated}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted border-none text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
@@ -58,14 +86,50 @@ const HeroSection = () => {
                     placeholder="Drop location"
                     value={drop}
                     onChange={(e) => setDrop(e.target.value)}
+                    onFocus={handleInputFocus}
+                    readOnly={!isAuthenticated}
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted border-none text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
-                <Button variant="hero" className="w-full h-12 text-base" size="lg" onClick={() => navigate("/track")}>
+                <Button variant="hero" className="w-full h-12 text-base" size="lg" onClick={handleBookRide}>
                   Find a Ride <ArrowRight size={18} />
                 </Button>
               </div>
             </div>
+
+            {/* Authentication Dialog */}
+            <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Sign In Required</DialogTitle>
+                  <DialogDescription>
+                    Please sign in or create an account to book a ride with RideGuard.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAuthDialog(false);
+                      navigate("/login");
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    variant="hero"
+                    onClick={() => {
+                      setShowAuthDialog(false);
+                      navigate("/register");
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    Create Account
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {/* Stats */}
             <div className="flex gap-8 mt-8">

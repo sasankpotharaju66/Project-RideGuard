@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const CTASection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24">
       <div className="container mx-auto px-4">
@@ -21,13 +24,15 @@ const CTASection = () => {
               Ready to Ride?
             </h2>
             <p className="text-primary-foreground/80 text-lg mb-8 max-w-xl mx-auto">
-              Download the Rapido app and get your first ride at a special discount. Available on Android and iOS.
+              Experience safe, affordable, and reliable rides. Learn more about RideGuard and discover why millions trust us.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="dark" size="lg" className="h-14 px-8 text-base">
-                <Download size={20} /> Download App
-              </Button>
-              <Button variant="ghost" size="lg" className="h-14 px-8 text-base text-primary-foreground hover:bg-background/10 hover:text-primary-foreground border border-primary-foreground/30">
+              <Button 
+                variant="ghost" 
+                size="lg" 
+                className="h-14 px-8 text-base text-primary-foreground hover:bg-background/10 hover:text-primary-foreground border border-primary-foreground/30"
+                onClick={() => navigate("/about")}
+              >
                 Learn More <ArrowRight size={18} />
               </Button>
             </div>

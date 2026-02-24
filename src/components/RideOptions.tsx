@@ -1,6 +1,17 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { Bike, Car, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const rides = [
   {
@@ -40,6 +51,20 @@ const item = {
 };
 
 const RideOptions = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+
+  const handleBookNow = () => {
+    if (isAuthenticated) {
+      // Navigate to dashboard where user can enter pickup and drop locations
+      navigate("/dashboard", { state: { scrollToBooking: true } });
+    } else {
+      // Show authentication popup
+      setShowAuthDialog(true);
+    }
+  };
+
   return (
     <section id="ride" className="py-24 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -88,12 +113,48 @@ const RideOptions = () => {
               <p className="text-sm text-muted-foreground mb-4">{ride.description}</p>
               <div className="flex items-center justify-between">
                 <span className="font-display font-bold text-lg">{ride.price}</span>
-                <Button variant="hero" size="sm">Book Now</Button>
+                <Button variant="hero" size="sm" onClick={handleBookNow}>
+                  Book Now
+                </Button>
               </div>
             </motion.div>
           ))}
         </motion.div>
       </div>
+
+      {/* Authentication Dialog */}
+      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign In Required</DialogTitle>
+            <DialogDescription>
+              Please sign in or create an account to book a ride with RideGuard.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAuthDialog(false);
+                navigate("/login");
+              }}
+              className="w-full sm:w-auto"
+            >
+              Sign In
+            </Button>
+            <Button
+              variant="hero"
+              onClick={() => {
+                setShowAuthDialog(false);
+                navigate("/register");
+              }}
+              className="w-full sm:w-auto"
+            >
+              Create Account
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

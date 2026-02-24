@@ -117,3 +117,8 @@
     backdrop-filter: blur(20px);
   }
 }
+
+/* Hide Firebase Emulator Warning */
+.firebase-emulator-warning {
+  display: none !important;
+}

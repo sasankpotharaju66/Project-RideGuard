@@ -1,26 +1,61 @@
 import { Phone, MessageSquare, Star, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface CaptainCardProps {
-  status: "arriving" | "riding" | "completed";
+  status: "arriving" | "riding" | "completed" | "cancelled";
   eta: number;
+  pickupAddr?: string;
+  dropAddr?: string;
+  fare?: number;
+  distanceKm?: number;
+  onSampleClick?: () => void;
+  onCancelClick?: () => void;
 }
 
-const CaptainCard = ({ status, eta }: CaptainCardProps) => {
+
+const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distanceKm, onSampleClick, onCancelClick }: CaptainCardProps) => {
   const statusLabels = {
-    arriving: "Captain is on the way",
+    arriving: "Rider is on the way",
     riding: "Ride in progress",
     completed: "Ride completed!",
+    cancelled: "Ride Cancelled",
   };
 
   const statusColors = {
     arriving: "bg-primary/10 text-primary",
     riding: "bg-green-100 text-green-700",
     completed: "bg-green-500 text-secondary-foreground",
+    cancelled: "bg-destructive/10 text-destructive",
+  };
+
+  const [sampleLoading, setSampleLoading] = useState(false);
+
+  const handleSampleClick = () => {
+    if (sampleLoading) return;
+    setSampleLoading(true);
+    if (onSampleClick) onSampleClick();
+    setTimeout(() => {
+      setSampleLoading(false);
+    }, 22000);
   };
 
   return (
     <div className="bg-card rounded-2xl shadow-card border border-border overflow-hidden">
+      {/* Sample Button for testing */}
+      {status !== "completed" && (
+        <div className="p-2 border-b border-border bg-muted/30 flex justify-center">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleSampleClick}
+            disabled={sampleLoading}
+          >
+            {sampleLoading ? "Testing..." : "Sample"}
+          </Button>
+        </div>
+      )}
+
       {/* Status Bar */}
       <div className={`px-5 py-3 ${statusColors[status]} text-sm font-semibold text-center`}>
         {statusLabels[status]}
@@ -29,14 +64,14 @@ const CaptainCard = ({ status, eta }: CaptainCardProps) => {
         )}
       </div>
 
-      {/* Captain Info */}
+      {/* Rider Info */}
       <div className="p-5">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 rounded-full bg-hero-gradient flex items-center justify-center text-2xl">
-            🧑
+            👤
           </div>
           <div className="flex-1">
-            <h4 className="font-display font-bold text-lg">Rajesh Kumar</h4>
+            <h4 className="font-display font-bold text-lg">Captain</h4>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Star size={14} className="text-primary fill-primary" />
               <span>4.8</span>
@@ -60,7 +95,7 @@ const CaptainCard = ({ status, eta }: CaptainCardProps) => {
             <div className="w-3 h-3 rounded-full bg-green-500 mt-1 flex-shrink-0" />
             <div>
               <p className="text-xs text-muted-foreground">PICKUP</p>
-              <p className="text-sm font-medium">Koramangala 4th Block, Bangalore</p>
+              <p className="text-sm font-medium">{pickupAddr || "Unknown pickup"}</p>
             </div>
           </div>
           <div className="border-l-2 border-dashed border-border ml-1.5 h-4" />
@@ -68,7 +103,7 @@ const CaptainCard = ({ status, eta }: CaptainCardProps) => {
             <div className="w-3 h-3 rounded-full bg-destructive mt-1 flex-shrink-0" />
             <div>
               <p className="text-xs text-muted-foreground">DROP</p>
-              <p className="text-sm font-medium">Indiranagar 100 Feet Road, Bangalore</p>
+              <p className="text-sm font-medium">{dropAddr || "Unknown drop"}</p>
             </div>
           </div>
         </div>
@@ -77,20 +112,25 @@ const CaptainCard = ({ status, eta }: CaptainCardProps) => {
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
           <div>
             <p className="text-xs text-muted-foreground">Estimated Fare</p>
-            <p className="font-display text-xl font-bold">₹45</p>
+            <p className="font-display text-xl font-bold">{fare ? `₹${fare}` : "—"}</p>
+            {typeof distanceKm === "number" && (
+              <p className="text-xs text-muted-foreground">{distanceKm.toFixed(2)} km</p>
+            )}
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Shield size={14} className="text-primary" />
-            Ride Insured
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+              <Shield size={14} className="text-primary" />
+              Ride Insured
+            </div>
+            {status !== "completed" && status !== "cancelled" && (
+              <Button variant="outline" size="sm" onClick={onCancelClick} className="text-destructive border-destructive hover:bg-destructive/10 h-8">
+                Cancel Ride
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Safety */}
-        {status !== "completed" && (
-          <Button variant="destructive" className="w-full mt-4 rounded-xl">
-            🚨 Emergency SOS
-          </Button>
-        )}
+        {/* Safety (Removed emergency button) */}
 
         {status === "completed" && (
           <Button variant="hero" className="w-full mt-4 rounded-xl">

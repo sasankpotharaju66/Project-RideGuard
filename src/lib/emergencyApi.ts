@@ -56,6 +56,8 @@ export async function triggerEmergency(payload: EmergencyPayload): Promise<{
     emergency?: object;
 } | null> {
     try {
+        console.log(`[API] Triggering emergency at: ${API_BASE}/api/emergency/trigger`);
+        console.log(`[API] Payload:`, payload);
         const res = await fetch(`${API_BASE}/api/emergency/trigger`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

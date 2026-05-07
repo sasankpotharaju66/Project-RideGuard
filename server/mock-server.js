@@ -4,8 +4,12 @@ import { WebSocketServer, WebSocket } from 'ws';
 import cors from 'cors';
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin (bypasses auth for local Firestore emulator)
-process.env.FIRESTORE_EMULATOR_HOST = "localhost:8082";
+// Initialize Firebase Admin
+if (process.env.NODE_ENV !== 'production') {
+  // Use local emulator in development
+  process.env.FIRESTORE_EMULATOR_HOST = "localhost:8082";
+}
+
 try {
   admin.initializeApp({ projectId: "rideguard-b23e5" });
 } catch (e) {
@@ -16,6 +20,15 @@ const db = admin.firestore();
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Log all requests for debugging
+app.use((req, res, next) => {
+  console.log(`[NET] ${req.method} ${req.url}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log(`[DATA]`, JSON.stringify(req.body));
+  }
+  next();
+});
 
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
@@ -164,12 +177,23 @@ app.post('/api/rides', (req, res) => {
   // Simulate captain movement
   const iv = setInterval(() => {
     const r = rides.get(id);
-    if (!r) return clearInterval(iv);
+    if (!r || r.rideStatus === 'CANCELLED') return clearInterval(iv);
     r.routeIndex++;
     if (r.routeIndex >= r.routePoints.length) {
       r.rideStatus = 'COMPLETED';
       r.captainPos = r.routePoints[r.routePoints.length - 1];
       clearInterval(iv);
+
+      // PERSIST TO FIRESTORE: Ensure status completes in background for user history
+      if (r.userId && r.userId !== 'anon') {
+        db.collection('users').doc(r.userId).collection('rideHistory').doc(id).update({
+          status: 'Completed'
+        }).then(() => {
+          console.log(`[DB] Ride ${id} marked as Completed in Firestore`);
+        }).catch((err) => {
+          console.warn(`[DB] Failed to update ride ${id}:`, err.message);
+        });
+      }
     } else {
       r.captainPos = r.routePoints[r.routeIndex];
       r.lastKnownPos = r.captainPos;
@@ -191,6 +215,16 @@ app.get('/api/rides/:id', (req, res) => {
   const r = rides.get(req.params.id);
   if (!r) return res.status(404).json({ error: 'not found' });
   res.json({ ride: r });
+});
+
+app.post('/api/rides/:id/cancel', (req, res) => {
+  const r = rides.get(req.params.id);
+  if (!r) return res.status(404).json({ error: 'not found' });
+  r.rideStatus = 'CANCELLED';
+  r.status = 'cancelled';
+  rides.set(r.id, r);
+  broadcastRide(r.id);
+  res.json({ ok: true });
 });
 
 // ─────────────────────────────────────────────
@@ -275,47 +309,83 @@ app.post('/api/emergency/trigger', async (req, res) => {
     return res.status(403).json({ error: 'not authorized' });
 
   const emergency = logEmergency(rideId, reason, location, { gender, manualTrigger: true });
+  // Disable throttle for easier testing
+  /*
   if (!emergency) {
     return res.json({ ok: true, throttled: true, message: 'Alert already sent recently' });
   }
+  */
+  console.log(`[SOS] Triggered! Reason: ${reason} for Ride: ${rideId}`);
 
   // Simulate contacting emergency services (log only — no real API)
   const targets = [];
 
-  if (emergencyContacts && emergencyContacts.length > 0) {
-    for (const contact of emergencyContacts) { // Changed to for...of for async/await
-      targets.push(`Push Notification: ${contact.phone}`);
-      console.log(`\n======================================================`);
-      console.log(`📱 [ALERT INITIATED] To: ${contact.name} (${contact.phone})`);
-      console.log(`   "URGENT: ${ride.user?.name || 'Your contact'} has triggered an SOS alert! Live Location: https://maps.google.com/?q=${location[0]},${location[1]}"`);
+  // 1. TELEGRAM INTEGRATION (Always send to hardcoded IDs)
+  try {
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8757776907:AAFztxcZXNxfM8c8LdpfdHJ4wbxT2njTSb0';
+    const TELEGRAM_CHAT_IDS = process.env.TELEGRAM_CHAT_IDS ? process.env.TELEGRAM_CHAT_IDS.split(',') : [];
 
-      try {
-        // TELEGRAM INTEGRATION
-        const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8757776907:AAFztxcZXNxfM8c8LdpfdHJ4wbxT2njTSb0';
-        const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '6135217618';
+    console.log(`[TELEGRAM] IDs detected: ${TELEGRAM_CHAT_IDS.join(', ')}`);
 
-        if (TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE' && TELEGRAM_CHAT_ID !== 'YOUR_CHAT_ID_HERE') {
-          const message = `🚨 *EMERGENCY ALERT!* 🚨\n\n*${ride.user?.name || 'Your contact'}* has triggered an SOS alert during their ride!\n\nLive GPS Location: https://maps.google.com/?q=${location[0]},${location[1]}\nContact: ${contact.name} (${contact.phone})`;
+    if (TELEGRAM_BOT_TOKEN !== 'YOUR_BOT_TOKEN_HERE') {
+      const locationLink = `https://www.google.com/maps?q=${location[0]},${location[1]}`;
+      const descriptions = {
+        'MANUAL_ALERT': 'Manual Distress Signal – User-initiated emergency alert indicating a potential threat, unsafe condition, or immediate assistance required',
+        'ROUTE_DEVIATION': 'Route Deviation Detected – The vehicle has significantly drifted from the assigned path.',
+        'NO_MOVEMENT': 'No Movement Detected – The vehicle has been stationary for an unusual period.'
+      };
+      const typeDesc = descriptions[reason] || 'Distress Signal – An emergency alert has been triggered.';
+      const userName = (ride.user?.name || 'User').charAt(0).toUpperCase() + (ride.user?.name || 'User').slice(1);
 
+      const message = `🚨 *EMERGENCY ALERT NOTIFICATION* 🚨\n\n` +
+        `An SOS alert has been activated through RideGuard.\n\n` +
+        `*Alert Details:*\n` +
+        `• *Type:* ${typeDesc}\n` +
+        `• *User:* ${userName}\n` +
+        `• *Live Location:* ${locationLink}\n\n` +
+        `Immediate action is advised. Please attempt to contact the individual at once.\n` +
+        `If they are unresponsive or you suspect danger, notify local emergency services without delay.\n\n` +
+        `_This alert was generated automatically by the RideGuard Safety System._`;
+
+      console.log(`[TELEGRAM] Attempting to notify ${TELEGRAM_CHAT_IDS.length} IDs...`);
+
+      for (const chatId of TELEGRAM_CHAT_IDS) {
+        try {
           const tgResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              chat_id: TELEGRAM_CHAT_ID,
+              chat_id: chatId,
               text: message,
               parse_mode: 'Markdown'
             })
           });
 
           if (tgResponse.ok) {
-            console.log(`✅ Telegram Notification sent successfully to Chat ID: ${TELEGRAM_CHAT_ID}!`);
+            console.log(`✅ Telegram Notification sent successfully to Chat ID: ${chatId}!`);
+            targets.push(`Telegram: ${chatId}`);
           } else {
             const errBody = await tgResponse.text();
-            console.log(`❌ Telegram Delivery Error:`, errBody);
+            console.log(`❌ Telegram Delivery Error for ID ${chatId}:`, errBody);
           }
-        } else {
-          console.log(`⚠️ Telegram notifications skipped. Configure TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.`);
+        } catch (tgErr) {
+          console.log(`❌ Telegram Request Error for ID ${chatId}:`, tgErr.message);
         }
+      }
+    }
+  } catch (err) {
+    console.log(`❌ Global Telegram Error: ${err.message}`);
+  }
+
+  // 2. EMERGENCY CONTACTS (Push notifications to specific people)
+  if (emergencyContacts && emergencyContacts.length > 0) {
+    for (const contact of emergencyContacts) {
+      targets.push(`Push Notification: ${contact.phone}`);
+      console.log(`\n======================================================`);
+      console.log(`📱 [ALERT INITIATED] To: ${contact.name} (${contact.phone})`);
+      console.log(`   "URGENT: ${ride.user?.name || 'Your contact'} has triggered an SOS alert! Live Location: https://maps.google.com/?q=${location[0]},${location[1]}"`);
+
+      try {
         // Query Firestore for contact's device token
         const usersRef = db.collection('users');
         const snapshot = await usersRef.where('phone', '==', contact.phone).get();
@@ -332,14 +402,9 @@ app.post('/api/emergency/trigger', async (req, res) => {
                 url: `https://maps.google.com/?q=${location[0]},${location[1]}`
               }
             };
-            // This will attempt to send real FCM push. (Requires keys in prod)
             await admin.messaging().send(payload);
             console.log(`✅ Push Notification sent successfully to ${contact.name}'s device!`);
-          } else {
-            console.log(`⚠️ User ${contact.name} has no FCM device token stored. Push skipped.`);
           }
-        } else {
-          console.log(`⚠️ Contact ${contact.name} (${contact.phone}) not found in app database.`);
         }
       } catch (err) {
         console.log(`❌ Notification Delivery Error: ${err.message}`);
@@ -347,7 +412,7 @@ app.post('/api/emergency/trigger', async (req, res) => {
       console.log(`======================================================\n`);
     }
   } else {
-    targets.push('emergency_contacts');
+    targets.push('emergency_services');
   }
 
   if (gender === 'female') {
@@ -422,10 +487,11 @@ wss.on('connection', (ws) => {
 // ─────────────────────────────────────────────
 // Start
 // ─────────────────────────────────────────────
-const PORT = process.env.MOCK_PORT || 4001;
+const PORT = process.env.PORT || process.env.MOCK_PORT || 4001;
 server.listen(PORT, () => {
+  console.log('\n======================================================');
+  console.log('🚀 RIDEGUARD BACKEND UPDATED (Version 5.0)');
+  console.log(`📡 Telegram Recipients: ${process.env.TELEGRAM_CHAT_IDS || 'None configured'}`);
+  console.log('======================================================\n');
   console.log(`Mock server with safety APIs listening on http://localhost:${PORT}`);
-  console.log('Endpoints: POST /api/rides, GET /api/rides/:id');
-  console.log('Safety:    POST /api/gps-update, POST /api/emergency/trigger');
-  console.log('           GET  /api/emergency/:rideId, POST /api/locations/batch');
 });

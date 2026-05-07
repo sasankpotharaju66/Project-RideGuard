@@ -1,73 +1,56 @@
-# Welcome to your Lovable project
+# 🛡️ RideGuard - Smart Safety & Secure Journey
 
-## Project info
+RideGuard is a premium ride-sharing application focused on passenger and captain safety. It features a real-time safety monitor that detects route deviations, inactivity, and allows for manual SOS triggers.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Key Safety Features
 
-## How can I edit this code?
+- **🚨 Premium SOS Telegram Alerts**: Instant high-priority notifications sent to multiple emergency recipients simultaneously.
+- **📱 Multi-Channel Notifications**: Integrated Telegram and Firebase Cloud Messaging (FCM) for reliable alert delivery.
+- **🛰️ Intelligent Monitoring**:
+  - **Route Deviation**: Detects when a driver moves significantly off the assigned path.
+  - **Inactivity Protection**: Alerts if the vehicle stops moving for an unusual duration.
+  - **Manual SOS**: One-tap emergency broadcast for immediate distress signal.
+- **🗺️ Live GPS Tracking**: Real-time location sharing with emergency contacts via Google Maps.
 
-There are several ways of editing your application.
+## 🛠️ Getting Started
 
-**Use Lovable**
+To run RideGuard locally, you need to start three core components:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 1. Frontend Development Server
+```bash
+npm install
 npm run dev
 ```
+Open [http://localhost:8080](http://localhost:8080) to view the app.
 
-**Edit a file directly in GitHub**
+### 2. Safety Mock Server (Backend)
+The backend handles emergency triggers, Telegram routing, and GPS simulation.
+```bash
+npm run mock
+```
+Default port: `4001`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 3. Firebase Emulators
+For local database and authentication support.
+```bash
+firebase emulators:start
+```
 
-**Use GitHub Codespaces**
+## 📡 Telegram Configuration
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+To receive emergency alerts on your phone:
+1. Create a bot using [BotFather](https://t.me/botfather) and get your **Bot Token**.
+2. Get your **Chat ID** using [IDBot](https://t.me/myidbot).
+3. Update `server/mock-server.js`:
+   - Set `TELEGRAM_BOT_TOKEN`.
+   - Add your IDs to the `hardcodedIds` array or use the `TELEGRAM_CHAT_IDS` environment variable.
 
-## What technologies are used for this project?
+## 🏗️ Technology Stack
 
-This project is built with:
+- **Frontend**: React, Vite, TypeScript, shadcn/ui, Tailwind CSS.
+- **Backend**: Node.js, Express (Mock Server), WebSocket.
+- **Database/Auth**: Firebase Firestore & Auth.
+- **Maps**: Google Maps Platform.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+*Built with safety as the #1 priority.*

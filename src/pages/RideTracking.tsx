@@ -7,7 +7,7 @@ import GoogleRideMap from "@/components/GoogleRideMap";
 import CaptainCard from "@/components/CaptainCard";
 import SafetyOverlay from "@/components/SafetyOverlay";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { getRide, WS_URL } from "@/lib/api";
+import { getRide, WS_URL, cancelRide } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
@@ -46,6 +46,30 @@ const RideTracking = () => {
 
   const [serverRide, setServerRide] = useState<any>(null);
   const [googlePath, setGooglePath] = useState<[number, number][]>([]);
+  const [resolvedPickup, setResolvedPickup] = useState<string | null>(null);
+  const [resolvedDrop, setResolvedDrop] = useState<string | null>(null);
+
+  // Fallback to resolve coordinates if Google Maps Geocoding failed previously
+  useEffect(() => {
+    const resolveAddress = async (addrStr: string, setter: (val: string) => void) => {
+      if (/^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(addrStr)) {
+        try {
+          const [lat, lng] = addrStr.split(',').map(Number);
+          const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+          const data = await res.json();
+          if (data && data.locality) {
+            setter(`${data.locality}, ${data.principalSubdivision || data.countryName}`);
+          }
+        } catch (e) { }
+      }
+    };
+
+    if (state?.pickup) resolveAddress(state.pickup, setResolvedPickup);
+    else if (serverRide?.pickup) resolveAddress(serverRide.pickup, setResolvedPickup);
+
+    if (state?.drop) resolveAddress(state.drop, setResolvedDrop);
+    else if (serverRide?.drop) resolveAddress(serverRide.drop, setResolvedDrop);
+  }, [state?.pickup, state?.drop, serverRide?.pickup, serverRide?.drop]);
 
   // Fetch ride + subscribe to WebSocket updates
   useEffect(() => {
@@ -117,27 +141,35 @@ const RideTracking = () => {
     }
   }, []);
 
+  // ── Route Deviation Simulation ──────────
+  const [isPaused, setIsPaused] = useState(false);
+  const [isWrongWay, setIsWrongWay] = useState(false);
+  const [showWrongWayPopup, setShowWrongWayPopup] = useState(false);
+
   // ── Smooth Rider Movement Hook ──────────
   const currentPath = googlePath.length > 0 ? googlePath : routePoints;
   const { position, bearing, rideState, startRide, currentIndex } = useRiderMovement({
     routePoints: currentPath,
     speedMultiplier: 2, // 2x speed for demo feel
+    isPaused,
   });
-
-  // ── Route Deviation Simulation ──────────
-  const [isWrongWay, setIsWrongWay] = useState(false);
-  const [showWrongWayPopup, setShowWrongWayPopup] = useState(false);
 
   // ── Ride Cancellation ──────────
   const [isCancelled, setIsCancelled] = useState(false);
   const [showCancelPopup, setShowCancelPopup] = useState(false);
 
-  const confirmCancel = useCallback(() => {
+  const confirmCancel = useCallback(async () => {
     setIsCancelled(true);
     setShowCancelPopup(false);
 
     // Update local history
     if (rideId) {
+      try {
+        await cancelRide(rideId);
+      } catch (e) {
+        console.error("Failed to cancel ride on backend", e);
+      }
+
       const historyKey = `ride_history_${user?.uid || 'guest'}`;
       const historyStr = localStorage.getItem(historyKey);
       if (historyStr) {
@@ -157,19 +189,21 @@ const RideTracking = () => {
     setTimeout(() => {
       navigate('/dashboard');
     }, 1500);
-  }, [navigate]);
+  }, [navigate, rideId, user]);
 
   const handleSampleAction = useCallback(() => {
     toast.info("Simulation started. Rider will deviate in 15 seconds...");
     setTimeout(() => {
       setIsWrongWay(true);
       setShowWrongWayPopup(true);
-
-      setTimeout(() => {
-        setIsWrongWay(false);
-        setShowWrongWayPopup(false);
-      }, 6000);
+      setIsPaused(true);
     }, 15000);
+  }, []);
+
+  const handleCloseWrongWay = useCallback(() => {
+    setIsPaused(false);
+    setIsWrongWay(false);
+    setShowWrongWayPopup(false);
   }, []);
 
   const displayPosition = isWrongWay && position ? [position[0] + 0.003, position[1] - 0.003] as [number, number] : position;
@@ -185,21 +219,26 @@ const RideTracking = () => {
 
   // Start animation once we have route points
   useEffect(() => {
+    // If we have a rideId, wait until we've fetched the serverRide to get its current progress
+    if (rideId && !serverRide) return;
+
     if (routePoints.length > 1 && rideState === 'IDLE') {
-      startRide();
+      const initialIndex = serverRide?.routeIndex || 0;
+      console.log(`[Tracking] Starting ride at index: ${initialIndex}`);
+      startRide(initialIndex);
     }
-  }, [routePoints, rideState, startRide]);
+  }, [routePoints, rideState, startRide, serverRide, rideId]);
 
   // Mark ride as completed in history
   useEffect(() => {
-    if (rideState === 'COMPLETED' && rideId) {
+    if (rideState === 'COMPLETED' && rideId && !isCancelled) {
       // Update local storage
       const historyKey = `ride_history_${user?.uid || 'guest'}`;
       const historyStr = localStorage.getItem(historyKey);
       if (historyStr) {
         let history = JSON.parse(historyStr);
         const idx = history.findIndex((r: any) => r.id === rideId);
-        if (idx !== -1 && history[idx].status !== 'Completed') {
+        if (idx !== -1 && history[idx].status !== 'Completed' && history[idx].status !== 'Cancelled') {
           history[idx].status = 'Completed';
           localStorage.setItem(historyKey, JSON.stringify(history));
         }
@@ -239,17 +278,22 @@ const RideTracking = () => {
   });
 
   const handleShare = async () => {
+    if (!rideId) {
+      toast.error("Ride ID not found. Cannot share.");
+      return;
+    }
+    const publicUrl = `${window.location.origin}/live/${rideId}`;
     const shareText = `Track my RideGuard journey from ${state?.pickup ?? "Current Location"} to ${state?.drop ?? "Destination"}.`;
     try {
       if (navigator.share) {
         await navigator.share({
           title: 'Track my ride',
           text: shareText,
-          url: window.location.href,
+          url: publicUrl,
         });
       } else {
-        await navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
-        toast.success("Tracking link copied to clipboard!");
+        await navigator.clipboard.writeText(`${shareText}\n${publicUrl}`);
+        toast.success("Public tracking link copied to clipboard!");
       }
     } catch (e) {
       console.error("Error sharing:", e);
@@ -260,7 +304,7 @@ const RideTracking = () => {
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Top Bar - Premium Glossy */}
       <div className="flex items-center justify-between px-6 py-4 glass border-b border-border/50 z-30">
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate("/")}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate(-1)}>
           <ArrowLeft size={22} />
         </Button>
         <div className="text-center">
@@ -297,17 +341,36 @@ const RideTracking = () => {
           {showWrongWayPopup && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                backgroundColor: ["#dc2626", "#991b1b", "#dc2626"],
+              }}
+              transition={{
+                backgroundColor: {
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                },
+              }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="absolute top-1/3 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm bg-destructive text-destructive-foreground p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center border-4 border-red-500"
+              className="absolute top-1/3 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm text-destructive-foreground p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center border-4 border-red-500/50"
             >
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-destructive mb-4 shadow-inner">
                 <AlertTriangle size={32} className="text-red-600" />
               </div>
               <h3 className="font-display font-black text-xl mb-2">Route Deviation!</h3>
-              <p className="text-red-100 font-medium text-sm">
+              <p className="text-red-100 font-medium text-sm mb-6">
                 Please guide or correct the rider. They seem to be going the wrong way.
               </p>
+              <Button
+                variant="secondary"
+                className="w-full font-bold h-12 rounded-xl text-lg shadow-lg hover:scale-105 transition-transform"
+                onClick={handleCloseWrongWay}
+              >
+                OK
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -344,8 +407,8 @@ const RideTracking = () => {
           <CaptainCard
             status={isCancelled ? 'cancelled' : rideState === 'COMPLETED' ? 'completed' : 'riding'}
             eta={dynamicEta}
-            pickupAddr={state?.pickup ?? "Current Location"}
-            dropAddr={state?.drop ?? "Destination"}
+            pickupAddr={resolvedPickup || serverRide?.pickup || state?.pickup || "Current Location"}
+            dropAddr={resolvedDrop || serverRide?.drop || state?.drop || "Destination"}
             fare={fare}
             distanceKm={distanceKm}
             onSampleClick={handleSampleAction}
@@ -358,8 +421,8 @@ const RideTracking = () => {
           <CaptainCard
             status={isCancelled ? 'cancelled' : rideState === 'COMPLETED' ? 'completed' : 'riding'}
             eta={dynamicEta}
-            pickupAddr={state?.pickup ?? "Current Location"}
-            dropAddr={state?.drop ?? "Destination"}
+            pickupAddr={resolvedPickup || serverRide?.pickup || state?.pickup || "Current Location"}
+            dropAddr={resolvedDrop || serverRide?.drop || state?.drop || "Destination"}
             fare={fare}
             distanceKm={distanceKm}
             onSampleClick={handleSampleAction}

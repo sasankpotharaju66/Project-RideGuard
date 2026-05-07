@@ -11,10 +11,11 @@ interface CaptainCardProps {
   distanceKm?: number;
   onSampleClick?: () => void;
   onCancelClick?: () => void;
+  hideControls?: boolean;
 }
 
 
-const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distanceKm, onSampleClick, onCancelClick }: CaptainCardProps) => {
+const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distanceKm, onSampleClick, onCancelClick, hideControls }: CaptainCardProps) => {
   const statusLabels = {
     arriving: "Rider is on the way",
     riding: "Ride in progress",
@@ -41,9 +42,9 @@ const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distan
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-card border border-border overflow-hidden">
+    <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/20 overflow-hidden">
       {/* Sample Button for testing */}
-      {status !== "completed" && (
+      {!hideControls && status !== "completed" && (
         <div className="p-2 border-b border-border bg-muted/30 flex justify-center">
           <Button
             size="sm"
@@ -122,7 +123,7 @@ const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distan
               <Shield size={14} className="text-primary" />
               Ride Insured
             </div>
-            {status !== "completed" && status !== "cancelled" && (
+            {!hideControls && status !== "completed" && status !== "cancelled" && (
               <Button variant="outline" size="sm" onClick={onCancelClick} className="text-destructive border-destructive hover:bg-destructive/10 h-8">
                 Cancel Ride
               </Button>

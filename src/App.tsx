@@ -16,6 +16,7 @@ import About from "./pages/About";
 import Drive from "./pages/Drive";
 import NotFound from "./pages/NotFound";
 import RideHistory from "./pages/RideHistory";
+import PublicTracking from "./pages/PublicTracking";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/live/:rideId" element={<PublicTracking />} />
 
             {/* PROTECTED ROUTES */}
             <Route

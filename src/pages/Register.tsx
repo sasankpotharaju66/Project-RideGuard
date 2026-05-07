@@ -221,7 +221,7 @@ const Register = () => {
               <img src={logo} alt="RideGuard logo" className="h-10 w-10 rounded-md object-contain" />
               <span className="font-display text-2xl font-bold text-gradient">RideGuard</span>
             </Link>
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft size={20} />
             </Button>
           </div>

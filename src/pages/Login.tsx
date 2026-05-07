@@ -53,7 +53,7 @@ const Login = () => {
               <img src={logo} alt="RideGuard logo" className="h-10 w-10 rounded-md object-contain" />
               <span className="font-display text-2xl font-bold text-gradient">RideGuard</span>
             </Link>
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft size={20} />
             </Button>
           </div>
@@ -83,7 +83,11 @@ const Login = () => {
               {/* Driver Login */}
               <motion.button
                 whileHover={{ scale: 1.05, y: -5 }}
-                onClick={() => navigate("/404")}
+                onClick={() => {
+                  toast.info("Driver Portal is Coming Soon! 🚧", {
+                    description: "Currently we are working on it. Stay tuned!",
+                  });
+                }}
                 className="relative group bg-gradient-to-br from-orange-500/20 to-orange-500/5 rounded-2xl p-8 border-2 border-orange-500/30 hover:border-orange-500/60 transition-all text-center"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />

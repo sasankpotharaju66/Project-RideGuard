@@ -12,6 +12,7 @@ import {
     Marker,
     DirectionsRenderer,
     Polyline,
+    OverlayView,
 } from '@react-google-maps/api';
 
 const GMAP_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
@@ -34,6 +35,7 @@ interface GoogleRideMapProps {
     rideRoute?: google.maps.DirectionsResult | null;
     onRouteLoad?: (route: google.maps.DirectionsResult) => void;
     remainingPath?: [number, number][];
+    center?: [number, number] | null;
 }
 
 const toLatLng = (pt: [number, number] | null | undefined) =>
@@ -52,6 +54,7 @@ const GoogleRideMap = ({
     rideRoute,
     onRouteLoad,
     remainingPath,
+    center,
 }: GoogleRideMapProps) => {
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: GMAP_KEY,
@@ -105,6 +108,13 @@ const GoogleRideMap = ({
             }
         }
     }, [captainPos]);
+
+    // Handle explicit centering
+    useEffect(() => {
+        if (mapRef.current && center && Array.isArray(center) && !isNaN(center[0]) && !isNaN(center[1])) {
+            mapRef.current.panTo({ lat: center[0], lng: center[1] });
+        }
+    }, [center]);
 
     const onLoad = useCallback((map: google.maps.Map) => {
         mapRef.current = map;
@@ -204,6 +214,16 @@ const GoogleRideMap = ({
                     }}
                     title="Rider"
                 />
+            )}
+
+            {/* Pulsing Radar Animation */}
+            {captainLatLng && (
+                <OverlayView
+                    position={captainLatLng}
+                    mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                >
+                    <div className="absolute -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-blue-500/30 rounded-full animate-ping pointer-events-none" />
+                </OverlayView>
             )}
 
             {/* Route Polyline (rendered via directions) */}

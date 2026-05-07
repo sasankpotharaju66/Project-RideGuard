@@ -79,7 +79,7 @@ const RideHistory = () => {
             <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
                 <div className="container mx-auto flex items-center justify-between h-16 px-4">
                     <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate("/dashboard")}>
+                        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate(-1)}>
                             <ArrowLeft size={22} />
                         </Button>
                         <div className="flex items-center gap-2">

@@ -130,7 +130,7 @@ const SafetyOverlay = ({
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.8, opacity: 0 }}
                             transition={{ type: 'spring', damping: 20 }}
-                            className="bg-card border border-border rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center"
+                            className="bg-card/80 backdrop-blur-xl border border-white/20 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.3)] p-8 max-w-sm w-full text-center"
                         >
                             {/* Pulsing icon */}
                             <motion.div
@@ -207,7 +207,7 @@ const SafetyOverlay = ({
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.8, opacity: 0 }}
                             transition={{ type: 'spring', damping: 20 }}
-                            className="bg-card border border-border rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center"
+                            className="bg-card/80 backdrop-blur-xl border border-white/20 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.3)] p-8 max-w-sm w-full text-center"
                         >
                             <div className="w-16 h-16 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-5">
                                 <AlertTriangle size={36} className="text-destructive animate-pulse" />
@@ -248,51 +248,32 @@ const SafetyOverlay = ({
                         <span className="text-green-400">Safety ON</span>
                     </div>
 
-                    <motion.button
-                        id="safety-alert-btn"
-                        onClick={handleAlertClick}
-                        disabled={alertButtonCooldown}
-                        whileHover={alertButtonCooldown ? {} : { scale: 1.08 }}
-                        whileTap={alertButtonCooldown ? {} : { scale: 0.94 }}
-                        animate={
-                            alertButtonCooldown
-                                ? {}
-                                : {
-                                    boxShadow: [
-                                        '0 0 0 0 rgba(220,38,38,0.7)',
-                                        '0 0 0 12px rgba(220,38,38,0)',
-                                    ],
+                    <div className="relative w-48 h-14 bg-black/40 backdrop-blur-md rounded-full border border-white/20 shadow-2xl flex items-center px-1 overflow-hidden">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="text-white/80 text-xs font-bold uppercase tracking-wider pl-8">
+                                {alertButtonCooldown ? "Alert Sent" : "Slide to SOS"}
+                            </span>
+                        </div>
+                        <motion.div
+                            drag={alertButtonCooldown ? false : "x"}
+                            dragConstraints={{ left: 0, right: 136 }}
+                            dragElastic={0.1}
+                            onDragEnd={(e, info) => {
+                                if (info.offset.x > 100 && !alertButtonCooldown) {
+                                    handleAlertClick();
                                 }
-                        }
-                        transition={
-                            alertButtonCooldown
-                                ? {}
-                                : { repeat: Infinity, duration: 1.5, ease: 'easeOut' }
-                        }
-                        className={`
-              w-16 h-16 rounded-full text-white font-bold text-xs flex flex-col items-center justify-center
-              shadow-2xl border-2 border-white/30 gap-0.5 select-none
-              ${alertButtonCooldown
-                                ? 'bg-gray-500 cursor-not-allowed opacity-70'
-                                : 'bg-destructive hover:bg-red-700 cursor-pointer'
-                            }
-            `}
-                        title={alertButtonCooldown ? 'Alert sent — wait 10s' : 'Send emergency alert'}
-                    >
-                        {alertButtonCooldown ? (
-                            <>
+                            }}
+                            className={`w-12 h-12 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing z-10 shadow-lg border-2 border-white/30 ${
+                                alertButtonCooldown ? "bg-gray-500" : "bg-destructive shadow-[0_0_15px_rgba(220,38,38,0.7)]"
+                            }`}
+                        >
+                            {alertButtonCooldown ? (
                                 <span className="text-lg">⏳</span>
-                                <span className="text-[9px] leading-tight">Sent</span>
-                            </>
-                        ) : (
-                            <>
+                            ) : (
                                 <span className="text-xl leading-none">🚨</span>
-                                <span className="text-[10px] leading-tight font-extrabold tracking-wide">
-                                    ALERT
-                                </span>
-                            </>
-                        )}
-                    </motion.button>
+                            )}
+                        </motion.div>
+                    </div>
                 </div>
             )}
         </>

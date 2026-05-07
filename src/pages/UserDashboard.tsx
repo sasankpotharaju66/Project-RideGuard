@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { MapPin, Navigation, ArrowRight, User, Mail, Phone, LogOut, Menu, X, Clock, Wallet } from "lucide-react";
+import { MapPin, Navigation, ArrowRight, User, Mail, Phone, LogOut, Menu, X, Clock, Wallet, LocateFixed } from "lucide-react";
 import { motion } from "framer-motion";
 import logo from "@/assets/logo.jpeg";
 import { toast } from "sonner";
@@ -35,6 +35,7 @@ const UserDashboard = () => {
   const [selectionMode, setSelectionMode] = useState<"pickup" | "drop" | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const bookingSectionRef = useRef<HTMLDivElement>(null);
 
   // Input element refs — native Autocomplete widgets attach to these
@@ -110,6 +111,37 @@ const UserDashboard = () => {
     logout();
     toast.success("Logged out successfully");
     navigate("/");
+  };
+
+  const handleCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    const toastId = toast.loading("Getting your current location...");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // Use the current selection mode or default to pickup
+        const type = selectionMode || "pickup";
+        if (type === "pickup") {
+          updatePickup(latitude, longitude);
+        } else {
+          updateDrop(latitude, longitude);
+        }
+        setMapCenter([latitude, longitude]);
+        toast.dismiss(toastId);
+        toast.success(`Updated ${type} to current location`);
+      },
+      (error) => {
+        toast.dismiss(toastId);
+        console.error("Geolocation error:", error);
+        toast.error("Failed to get your location. Please check permissions.");
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
   };
 
   const handleBookRide = async () => {
@@ -345,9 +377,22 @@ const UserDashboard = () => {
                     onLocationSelect={handleMapSelect}
                     onMarkerDragEnd={handleMarkerDrag}
                     rideRoute={route}
+                    center={mapCenter}
                   />
 
                   {/* Floating Controls */}
+                  <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="rounded-full shadow-lg h-12 w-12 bg-blue-600 text-white backdrop-blur-md border border-blue-400/50 hover:bg-blue-700 hover:scale-110 transition-all duration-300"
+                      onClick={handleCurrentLocation}
+                      title="Use Current Location"
+                    >
+                      <LocateFixed size={20} />
+                    </Button>
+                  </div>
+
                   <div className="absolute bottom-4 left-4 right-4 flex gap-2">
                     <Button
                       variant={selectionMode === 'pickup' ? 'default' : 'secondary'}

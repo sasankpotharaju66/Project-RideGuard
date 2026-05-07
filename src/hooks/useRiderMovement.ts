@@ -6,9 +6,10 @@ interface RiderMovementProps {
     routePoints: [number, number][];
     onStateChange?: (state: RideState) => void;
     speedMultiplier?: number;
+    isPaused?: boolean;
 }
 
-export const useRiderMovement = ({ routePoints, onStateChange, speedMultiplier = 1 }: RiderMovementProps) => {
+export const useRiderMovement = ({ routePoints, onStateChange, speedMultiplier = 1, isPaused = false }: RiderMovementProps) => {
     const [position, setPosition] = useState<[number, number] | null>(null);
     const [bearing, setBearing] = useState(0);
     const [rideState, setRideState] = useState<RideState>('IDLE');
@@ -38,6 +39,12 @@ export const useRiderMovement = ({ routePoints, onStateChange, speedMultiplier =
     };
 
     const animate = useCallback((timestamp: number) => {
+        if (isPaused) {
+            startTimeRef.current = null;
+            animationRef.current = requestAnimationFrame(animate);
+            return;
+        }
+
         if (!startTimeRef.current) startTimeRef.current = timestamp;
         if (latestRoutePoints.current.length < 2) return;
 
@@ -82,12 +89,22 @@ export const useRiderMovement = ({ routePoints, onStateChange, speedMultiplier =
         }
 
         animationRef.current = requestAnimationFrame(animate);
-    }, [onStateChange]);
+    }, [onStateChange, isPaused]);
 
-    const startRide = useCallback(() => {
+    const startRide = useCallback((startIndex: number = 0) => {
         if (routePoints.length < 2) return;
-        currentPointIndexRef.current = 0;
-        setCurrentIndex(0);
+        const validIndex = Math.min(Math.max(0, startIndex), routePoints.length - 1);
+        currentPointIndexRef.current = validIndex;
+        setCurrentIndex(validIndex);
+
+        // Immediately set position and bearing to prevent "jump" from start
+        const p1 = routePoints[validIndex];
+        const p2 = routePoints[Math.min(validIndex + 1, routePoints.length - 1)];
+        setPosition(p1);
+        if (validIndex < routePoints.length - 1) {
+            setBearing(calculateBearing(p1, p2));
+        }
+
         startTimeRef.current = null;
         setRideState('DRIVER_ASSIGNED');
         onStateChange?.('DRIVER_ASSIGNED');

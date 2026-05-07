@@ -16,6 +16,12 @@ export async function getRide(id: string) {
   return res.json();
 }
 
+export async function cancelRide(id: string) {
+  const res = await fetch(`${API_BASE}/api/rides/${id}/cancel`, { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to cancel ride');
+  return res.json();
+}
+
 export const WS_URL = (import.meta.env.VITE_WS_URL || 'ws://localhost:4001');
 
 // Safety API re-exports

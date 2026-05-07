@@ -33,12 +33,28 @@ export const useMapInteraction = (apiKey: string) => {
 
     const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
         return new Promise((resolve) => {
-            if (!geocoderRef.current) return resolve(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+            const fallback = async () => {
+                try {
+                    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+                    const data = await res.json();
+                    if (data && data.locality) {
+                        return resolve(`${data.locality}, ${data.principalSubdivision || data.countryName}`);
+                    }
+                } catch (e) {
+                    console.warn("Fallback geocoder failed", e);
+                }
+                resolve(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+            };
+
+            if (!geocoderRef.current) {
+                return fallback();
+            }
+
             geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
                 if (status === 'OK' && results?.[0]) {
                     resolve(results[0].formatted_address);
                 } else {
-                    resolve(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                    fallback();
                 }
             });
         });

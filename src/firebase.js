@@ -4,12 +4,13 @@ import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getMessaging } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDCTRbMKCRo-VypR6tL7MCquS9QSCVLaqk",
+  apiKey: "AIzaSyDCtRbMKCRo-VypR6tL7MCquS9QSCVLaqk",
   authDomain: "rideguard-b23e5.firebaseapp.com",
   projectId: "rideguard-b23e5",
   storageBucket: "rideguard-b23e5.firebasestorage.app",
   messagingSenderId: "152987221322",
-  appId: "1:152987221322:web:07025a72e3a975dd6f95b3"
+  appId: "1:152987221322:web:07025a72e3a975dd6f95b3",
+  measurementId: "G-4MT8KXP1N6"
 };
 
 export const app = initializeApp(firebaseConfig);

@@ -257,26 +257,25 @@ const UserDashboard = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="pt-20">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-3 gap-8">
+        <div className="container mx-auto px-4 py-4 md:py-8">
+          <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
             {/* Left Sidebar - Profile & Stats */}
             <div className="lg:col-span-1 space-y-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card rounded-2xl p-6 shadow-card border border-border"
+                className="bg-card rounded-2xl p-4 md:p-6 shadow-card border border-border"
               >
                 <div className="flex flex-col items-center mb-6">
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 border-2 border-primary/20">
-                      <User size={40} className="text-primary" />
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 border-2 border-primary/20">
+                      <User className="w-8 h-8 md:w-10 md:h-10 text-primary" />
                     </div>
-                    <div className="absolute bottom-4 right-0 w-6 h-6 bg-green-500 border-2 border-card rounded-full" />
+                    <div className="absolute bottom-4 right-0 w-5 h-5 md:w-6 md:h-6 bg-green-500 border-2 border-card rounded-full" />
                   </div>
-                  <h2 className="font-display text-2xl font-bold mb-1">{user.name}</h2>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <h2 className="font-display text-xl md:text-2xl font-bold mb-1">{user.name}</h2>
+                  <p className="text-xs md:text-sm text-muted-foreground">{user.email}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 border-t border-border pt-6">
@@ -331,7 +330,7 @@ const UserDashboard = () => {
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-card rounded-3xl p-8 shadow-xl border border-border overflow-hidden"
+                className="bg-card rounded-3xl p-4 md:p-8 shadow-xl border border-border overflow-hidden"
               >
                 <div className="mb-8">
                   <h1 className="font-display text-3xl font-bold mb-2">Where to?</h1>
@@ -367,7 +366,7 @@ const UserDashboard = () => {
                 </div>
 
                 {/* Map Section */}
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/50 h-[450px] mb-6">
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border/50 h-[300px] md:h-[450px] mb-6">
                   <GoogleRideMap
                     pickup={pickup.coords[0] !== 0 ? pickup.coords : null}
                     drop={drop.coords[0] !== 0 ? drop.coords : null}
@@ -413,7 +412,7 @@ const UserDashboard = () => {
 
                 <Button
                   variant="hero"
-                  className="w-full h-16 text-xl shadow-brand font-black rounded-2xl group"
+                  className="w-full h-14 md:h-16 text-lg md:text-xl shadow-brand font-black rounded-2xl group"
                   onClick={handleBookRide}
                   disabled={loading || !pickup.address || !drop.address}
                 >

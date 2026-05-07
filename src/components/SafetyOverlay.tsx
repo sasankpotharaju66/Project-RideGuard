@@ -241,7 +241,7 @@ const SafetyOverlay = ({
 
             {/* ── Floating ALERT Button ──────────────────────────────────────── */}
             {!rideComplete && (
-                <div className="fixed bottom-6 right-4 z-[9997] flex flex-col items-center gap-1">
+                <div className="fixed bottom-[280px] md:bottom-6 right-4 z-[9997] flex flex-col items-center gap-1">
                     {/* Safety shield indicator */}
                     <div className="flex items-center gap-1 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full mb-1">
                         <Shield size={9} className="text-green-400" />

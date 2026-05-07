@@ -58,7 +58,7 @@ const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distan
       )}
 
       {/* Status Bar */}
-      <div className={`px-5 py-3 ${statusColors[status]} text-sm font-semibold text-center`}>
+      <div className={`px-4 md:px-5 py-2 md:py-3 ${statusColors[status]} text-sm font-semibold text-center`}>
         {statusLabels[status]}
         {status !== "completed" && (
           <span className="ml-2">• ETA {eta} min</span>
@@ -66,13 +66,13 @@ const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distan
       </div>
 
       {/* Rider Info */}
-      <div className="p-5">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-full bg-hero-gradient flex items-center justify-center text-2xl">
+      <div className="p-3 md:p-5">
+        <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-hero-gradient flex items-center justify-center text-xl md:text-2xl">
             👤
           </div>
           <div className="flex-1">
-            <h4 className="font-display font-bold text-lg">Captain</h4>
+            <h4 className="font-display font-bold text-base md:text-lg">Captain</h4>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Star size={14} className="text-primary fill-primary" />
               <span>4.8</span>
@@ -91,7 +91,7 @@ const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distan
         </div>
 
         {/* Ride Details */}
-        <div className="bg-muted rounded-xl p-4 space-y-3">
+        <div className="bg-muted rounded-xl p-3 md:p-4 space-y-2 md:space-y-3">
           <div className="flex items-start gap-3">
             <div className="w-3 h-3 rounded-full bg-green-500 mt-1 flex-shrink-0" />
             <div>
@@ -110,7 +110,7 @@ const CaptainCard = ({ status, eta, pickupAddr = "", dropAddr = "", fare, distan
         </div>
 
         {/* Fare */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+        <div className="flex items-center justify-between mt-3 md:mt-4 pt-3 md:pt-4 border-t border-border">
           <div>
             <p className="text-xs text-muted-foreground">Estimated Fare</p>
             <p className="font-display text-xl font-bold">{fare ? `₹${fare}` : "—"}</p>

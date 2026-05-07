@@ -417,7 +417,7 @@ const RideTracking = () => {
         </div>
 
         {/* Bottom Panel - Mobile only overlay */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-md px-4 z-20 md:hidden">
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[98%] max-w-md z-20 md:hidden">
           <CaptainCard
             status={isCancelled ? 'cancelled' : rideState === 'COMPLETED' ? 'completed' : 'riding'}
             eta={dynamicEta}

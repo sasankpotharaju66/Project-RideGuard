@@ -339,25 +339,26 @@ const RideTracking = () => {
         {/* Wrong Way Popup */}
         <AnimatePresence>
           {showWrongWayPopup && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                y: 0,
-                backgroundColor: ["#dc2626", "#991b1b", "#dc2626"],
-              }}
-              transition={{
-                backgroundColor: {
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                },
-              }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="absolute top-1/3 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm text-destructive-foreground p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center border-4 border-red-500/50"
-            >
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-destructive mb-4 shadow-inner">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  y: 0,
+                  backgroundColor: ["#dc2626", "#991b1b", "#dc2626"],
+                }}
+                transition={{
+                  backgroundColor: {
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  },
+                }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="w-full max-w-sm text-destructive-foreground p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center border-4 border-red-500/50"
+              >
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-destructive mb-4 shadow-inner">
                 <AlertTriangle size={32} className="text-red-600" />
               </div>
               <h3 className="font-display font-black text-xl mb-2">Route Deviation!</h3>
@@ -378,13 +379,14 @@ const RideTracking = () => {
         {/* Cancel Popup */}
         <AnimatePresence>
           {showCancelPopup && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="absolute top-1/3 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm bg-card text-card-foreground p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center border-2 border-border"
-            >
-              <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center text-destructive mb-4">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="w-full max-w-sm bg-card text-card-foreground p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center border-2 border-border"
+              >
+                <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle size={32} />
               </div>
               <h3 className="font-display font-black text-xl mb-2">Cancel Ride?</h3>
